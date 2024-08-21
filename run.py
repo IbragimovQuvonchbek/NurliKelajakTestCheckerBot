@@ -40,15 +40,20 @@ async def command_testlar_handler(message: types.Message, state: FSMContext) -> 
     if not data.get('test'):
         tests = await get_all_tests()
         builder = InlineKeyboardBuilder()
-        for test in tests:
-            builder.button(text=test['test_name'],
-                           callback_data=f"testlar_{test["id"]}_{message.from_user.id}_{test['test_name']}")
-        builder.adjust(2)
-        await message.answer("Testlardan birini tanlang!", reply_markup=builder.as_markup())
-        await state.set_state(TestState.test)
+        if tests:
+            for test in tests:
+                builder.button(text=test['test_name'],
+                               callback_data=f"testlar_{test["id"]}_{message.from_user.id}_{test['test_name']}")
+            builder.adjust(2)
+            await message.answer("Testlardan birini tanlang!", reply_markup=builder.as_markup())
+            await state.set_state(TestState.test)
+        else:
+            await message.answer("Hali testlar kiritilmagan")
+            await state.clear()
     else:
         await message.reply(
             f"Siz testni boshlab qo'ygansiz u testni yakunlang!\nKalitlarini Ko'rsatilgan tartibda yozib yuboring!\nAgar testni yechishni istamasangiz {html.bold("yakunlash")} so'zini yozib yuboring!")
+        await state.clear()
 
 
 @dp.callback_query(lambda callback: callback.data.startswith('testlar'), TestState.test)
