@@ -1,3 +1,5 @@
+from shutil import which
+
 import aiohttp
 
 
@@ -31,4 +33,15 @@ async def user_solved(pk, telegram_id):
     url = f"http://13.60.228.133/api/v1/testchecker/user-solved/{pk}/?telegram_id={telegram_id}"
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
+            return await response.json()
+
+
+async def add_file(pk, file_id):
+    url = f"http://13.60.228.133/api/v1/testchecker/add-testfile/"
+    payload = {
+        "test_id": pk,
+        "file_id": file_id
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=payload) as response:
             return await response.json()

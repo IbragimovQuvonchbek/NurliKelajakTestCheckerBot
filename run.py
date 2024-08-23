@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 from gc import callbacks
+from http.client import responses
 
 from aiogram import Bot, Dispatcher, F, html
 from aiogram import types
@@ -16,7 +17,7 @@ from aiogram.types import ContentType
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from dotenv import load_dotenv
-from api_cuntions import get_all_tests, user_solved, check_test
+from api_cuntions import get_all_tests, user_solved, check_test, get_test_by_id, add_file
 
 load_dotenv()
 
@@ -73,13 +74,14 @@ async def options_test_handler(callback: types.CallbackQuery, state: FSMContext)
     else:
         caption = f'''Test boshlandi kalitlarini namunada ko'rsatilgandek yuboring
         
-1.a
-2.b
-3.c
-4.d
-....
+{html.bold("abcdaabb...")}
 Agar testni yechishni istamasangiz {html.bold("yakunlash")} so'zini yozib yuboring
         '''
+        response_file_id = await get_test_by_id(test_id)
+        file_id = response_file_id['test_files']
+        if file_id:
+            file_id = file_id[0]['file_id']
+            await callback.message.answer_document(document=file_id)
         await callback.message.reply(caption)
         await state.set_state(TestState.solution)
 
@@ -88,7 +90,8 @@ Agar testni yechishni istamasangiz {html.bold("yakunlash")} so'zini yozib yubori
 async def solution_test_handler(message: types.Message, state: FSMContext) -> None:
     solution = message.text
     await state.update_data(solution=solution)
-
+    if not solution.isalpha() or solution.lower() == "yakunlash":
+        solution = "∅"
     name = message.from_user.full_name
     telegram_id = message.from_user.id
 
@@ -104,6 +107,21 @@ async def solution_test_handler(message: types.Message, state: FSMContext) -> No
         await message.reply("Serverda xatolik. Dasturchiga aloqa chiqing @IbraigmovQuovnchbek")
 
     await state.clear()
+
+
+@dp.message(F.content_type == ContentType.DOCUMENT)
+async def document_message_handler(message: types.Message) -> None:
+    if message.from_user.id == 5091336899:
+        try:
+            file_id = message.document.file_id
+            file_caption = int(message.caption)
+            response = await add_file(file_caption, file_id)
+            if response.get('status'):
+                await message.reply("Bazaga qo'shildi")
+            else:
+                await message.reply("Serverda Xatolik. Dasturchiga aloqa chiqing @IbraigmovQuovnchbek")
+        except Exception as e:
+            await message.reply("Serverda Xatolik. Dasturchiga aloqa chiqing @IbraigmovQuovnchbek")
 
 
 async def main() -> None:
